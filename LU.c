@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 		
 		if(matrixSize < maxPrintSize){
 			printf("\n---------- Macierz wejściowa ----------\n");
-			printMainMatrix(matrixSize);
+			printMatrix(matrix, matrixSize);
 		}
     }
     upc_barrier;
