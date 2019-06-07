@@ -25,7 +25,7 @@ void main (int argc, char* argv[]) {
 		long i, j;
 		for(i = 0 ; i < matrix_size ; i++) {
 			for(j = 0; j < matrix_size ; j++) {
-			    fprintf(file, "%2.1f ", (double)(rand()%2)+1);
+			    fprintf(file, "%2.1f ", (double)(rand()%10)+1);
 			}
 			fprintf(file, "\n");
 		}
