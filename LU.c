@@ -156,15 +156,14 @@ int testResult(double **original, int size){
 	
 	if (size < maxPrintSize) {
 		printf("LxU\n");
-		printMatrix(solution, size);
+		printMatrix(original, size);
 	}
 	printf("\n");
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
 			if (round(original[i][j]) != round(solution[i][j]) ) {
-				printf("inne:\nA[%d][%d]: %f \nL*U[%d][%d]: %f\n", i, j, original[i][j], i, j, solution[i][j]);
-				return 0;
+				return 1;
 			}
 		}
 	}
@@ -193,7 +192,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	
-	l=upc_all_lock_alloc();
     
     if(MYTHREAD == 0) {
 		gettimeofday(&start, NULL);
@@ -213,7 +211,6 @@ int main(int argc, char *argv[]) {
 
 
     upc_barrier 0;
-    upc_notify 1;
     upc_forall(int k = 0; k < matrixSize; k++; k) {
 		
 		for(int j = k + 1; j < matrixSize; j++) {  
@@ -232,7 +229,7 @@ int main(int argc, char *argv[]) {
 
 
     printf("--- th %d \n", MYTHREAD);
-    upc_wait 1; 
+    upc_barrier 1;
 	if (MYTHREAD == 0) {	
 	  	gettimeofday(&stop, NULL);
 		double sc  = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
@@ -250,8 +247,6 @@ int main(int argc, char *argv[]) {
 			printf("\n---------- SPRAWDZENIE ----------\n");
 			printf("Test poprzez wymnożenie: %s\n", testResult(matrix, matrixSize) ? "Udany" : "Nieudany");
 		}
-		
-		//upc_lock_free(l);
 	} 
 
 	for(int i = 0; i < matrixSize; i++){
