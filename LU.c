@@ -6,8 +6,9 @@
 #include <time.h>
 #include <math.h>
 #include <sys/time.h>
+#include <unistd.h>
 
-int maxPrintSize = 7;
+int maxPrintSize = 6;
 int maxTestSize = 500;
 
 shared double *shared *matrixA;
@@ -181,58 +182,65 @@ int main(int argc, char *argv[]) {
 	}
   
 	long matrixSize;
-	//Czytanie macierzy
+	double dzielenie;
+	//Czytanie macierzy z pliku
 	fscanf(file, "%lu", &matrixSize); 
 	double **matrix = createMatrix(matrixSize);
-	readMatrix(matrix, matrixSize, file);
 	
 	matrixA = (shared double *shared *)upc_all_alloc(matrixSize,sizeof(shared double*));
   	for(int i = 0; i < matrixSize; i++) {
     	matrixA[i] = upc_alloc(matrixSize*sizeof(shared double));
-		
-		for(int j = 0; j < matrixSize; ++j) {
-			matrixA[i][j] = matrix[j][i];
-		}
 	}
-    upc_barrier;
 
 	
 	l=upc_all_lock_alloc();
     
     if(MYTHREAD == 0) {
 		gettimeofday(&start, NULL);
-		
+		readMatrix(matrix, matrixSize, file);
+	  	for(int i = 0; i < matrixSize; i++) {
+			
+			for(int j = 0; j < matrixSize; ++j) {
+				upc_memput(&matrixA[i][j], &matrix[j][i], sizeof(double)); 
+			}
+		}
+
 		if(matrixSize < maxPrintSize){
 			printf("\n---------- Macierz wejściowa ----------\n");
 			printMatrix(matrix, matrixSize);
 		}
     }
-    upc_barrier;
 
+
+    upc_barrier 0;
+    upc_notify 1;
     upc_forall(int k = 0; k < matrixSize; k++; k) {
 		
 		for(int j = k + 1; j < matrixSize; j++) {  
-			matrixA[k][j] = matrixA[k][j] / matrixA[k][k];
+			dzielenie = matrixA[k][j] / matrixA[k][k];
+			upc_memput(&matrixA[k][j], &dzielenie, sizeof(double));
 		}           
 		
         for(int i = k + 1; i < matrixSize; i++) {
             for(int j = k + 1; j < matrixSize; j++) {
-                matrixA[i][j] = matrixA[i][j] - matrixA[i][k] * matrixA[k][j];
+                dzielenie = matrixA[i][j] - matrixA[i][k] * matrixA[k][j];
+                upc_memput(&matrixA[i][j], &dzielenie, sizeof(double));
             }   
         }
         printf("--- it %d  th %d \n", k , MYTHREAD);
     }
 
-    upc_barrier;
-   
-	if (MYTHREAD == 0) {		
+
+    printf("--- th %d \n", MYTHREAD);
+    upc_wait 1; 
+	if (MYTHREAD == 0) {	
 	  	gettimeofday(&stop, NULL);
 		double sc  = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
         
+        swapMatrix(matrixSize);
 		printf("\n---------- WYNIK ----------\n");
 		if (matrixSize < maxPrintSize) {
 			printf("Macierz wynikowa:\n");
-			swapMatrix(matrixSize);
 			printMainMatrix(matrixSize);
 		}
 		printf("Wymiar macierzy:\t %lu \n", matrixSize);
@@ -244,10 +252,9 @@ int main(int argc, char *argv[]) {
 		}
 		
 		//upc_lock_free(l);
-	}
-  	
-	int i;
-	for(i = 0; i < matrixSize; i++){
+	} 
+
+	for(int i = 0; i < matrixSize; i++){
 		free(matrix[i]);
 	}
 	free(matrix);
