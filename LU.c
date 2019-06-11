@@ -8,8 +8,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-int maxPrintSize = 6;
-int maxTestSize = 500;
+int maxPrintSize = 5;
+int maxTestSize = 100;
 
 shared double *shared *matrixA;
 upc_lock_t *l;
