@@ -1,17 +1,19 @@
 GCC = gcc
 GUPC  = gupc
 CFLAGS = -lm
-PROGRAM = LU.out
-DIMENSION = 500
+PROGRAM = LU
+DIMENSION = 3
 NPROCS = 4
 
 all:
-	#source /opt/nfs/config/source_gupc.sh
-	$(GCC) $(CFLAGS) -o generateMatrix.out generateMatrix.c
+	$(GCC) $(CFLAGS) -o generateMatrix generateMatrix.c
 	$(GUPC) $(CFLAGS) -o $(PROGRAM) LU.c
+data:
+	chmod 764 ./generateMatrix
+	./generateMatrix ${DIMENSION}
 run:
-	./generateMatrix.out ${DIMENSION}
-	./$(PROGRAM) -n ${NPROCS} data.txt
+	chmod 764 ./LU
+	./LU -n ${NPROCS} data.txt
 clean:
 	rm *.out data.txt
 	
